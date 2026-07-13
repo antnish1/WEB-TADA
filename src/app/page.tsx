@@ -1,5 +1,5 @@
-import { DeputationBoard } from "@/components/deputation-board";
+import { AuthShell } from "@/components/auth-shell";
 
 export default function Home() {
-  return <DeputationBoard />;
+  return <AuthShell />;
 }

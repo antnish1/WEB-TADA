@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Cloud, Plus, Save, Search, Send, Trash2, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Cloud, LogOut, Plus, Save, Search, Send, Trash2, Users } from "lucide-react";
 import { engineersByBranch, type Branch } from "@/lib/engineers";
 import type { CallEntry, DailyStatus, EngineerPlan } from "@/lib/types";
 import { createCall, hasOverlap, statusLabels, validatePlan, workStatuses } from "@/lib/utils";
@@ -12,16 +12,28 @@ const branches = Object.keys(engineersByBranch) as Branch[];
 const today = new Date().toISOString().slice(0, 10);
 const createPlans = (branch: Branch): EngineerPlan[] => engineersByBranch[branch].map((engineerName) => ({ engineerName, status: "NOT_FILLED", remarks: "", expanded: false, calls: [] }));
 
-export function DeputationBoard() {
-  const [branch, setBranch] = useState<Branch>("JABALPUR BHL");
+type DeputationBoardProps = {
+  initialBranch?: Branch;
+  branchLocked?: boolean;
+  userLabel?: string;
+  onLogout?: () => void | Promise<void>;
+};
+
+export function DeputationBoard({ initialBranch = "JABALPUR BHL", branchLocked = false, userLabel = "Branch Manager", onLogout }: DeputationBoardProps) {
+  const safeInitialBranch = branches.includes(initialBranch) ? initialBranch : "JABALPUR BHL";
+  const [branch, setBranch] = useState<Branch>(safeInitialBranch);
   const [date, setDate] = useState(today);
-  const [plans, setPlans] = useState<EngineerPlan[]>(() => createPlans("JABALPUR BHL"));
+  const [plans, setPlans] = useState<EngineerPlan[]>(() => createPlans(safeInitialBranch));
   const [filter, setFilter] = useState<"ALL" | "PENDING" | DailyStatus>("ALL");
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [source, setSource] = useState<"local" | "supabase">("local");
   const storageKey = `tada-daily-plan:${branch}:${date}`;
+
+  useEffect(() => {
+    if (branchLocked && initialBranch && branches.includes(initialBranch)) setBranch(initialBranch);
+  }, [branchLocked, initialBranch]);
 
   useEffect(() => {
     let active = true;
@@ -96,10 +108,10 @@ export function DeputationBoard() {
     <aside className="sidebar">
       <div className="brand"><div className="brand-mark">FCV</div><div><strong>TADA</strong><span>Service Operations</span></div></div>
       <nav><button><ClipboardCheck size={18}/> Dashboard</button><button className="active"><Users size={18}/> Today&apos;s Deputation</button><button><ClipboardCheck size={18}/> All Deputations</button></nav>
-      <div className="sidebar-note"><Cloud size={16}/> {isSupabaseConfigured ? `Data source: ${source}` : "Supabase not configured"}</div>
+      <div className="sidebar-note"><Cloud size={16}/> {isSupabaseConfigured ? `Data source: ${source}` : "Supabase not configured"}<br/><strong>{userLabel}</strong><br/>{branch}{onLogout && <button className="logout-link" onClick={() => void onLogout()}><LogOut size={15}/> Sign out</button>}</div>
     </aside>
     <section className="content">
-      <header className="topbar"><div><p className="eyebrow">DAILY WORKFORCE PLANNING</p><h1>Today&apos;s Deputation</h1><p className="subtitle">Account for every active engineer and assign one or more calls.</p></div><div className="top-controls"><label>Branch<select value={branch} onChange={(e) => setBranch(e.target.value as Branch)}>{branches.map((b) => <option key={b}>{b}</option>)}</select></label><label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)}/></label></div></header>
+      <header className="topbar"><div><p className="eyebrow">DAILY WORKFORCE PLANNING</p><h1>Today&apos;s Deputation</h1><p className="subtitle">Account for every active engineer and assign one or more calls.</p></div><div className="top-controls"><label>Branch<select value={branch} disabled={branchLocked} onChange={(e) => setBranch(e.target.value as Branch)}>{(branchLocked ? [branch] : branches).map((b) => <option key={b}>{b}</option>)}</select></label><label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)}/></label></div></header>
       <section className="stats-grid"><Stat label="Total Engineers" value={counts.total}/><Stat label="Completed" value={counts.completed} positive/><Stat label="Pending" value={counts.pending} warning={counts.pending > 0}/><Stat label="Onsite" value={counts.onsite}/><Stat label="Workshop" value={counts.workshop}/><Stat label="Total Calls" value={counts.calls}/></section>
       <section className="toolbar panel"><div className="search-box"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search engineer"/></div><div className="filter-row">{(["ALL","PENDING","ONSITE","WORKSHOP","LEAVE","ABSENT"] as const).map((item) => <button key={item} className={filter === item ? "selected" : ""} onClick={() => setFilter(item)}>{item === "ALL" ? "All Engineers" : item === "PENDING" ? "Pending Only" : statusLabels[item]}</button>)}</div></section>
       {message && <div className={`notice ${message.startsWith("Cannot") || message.includes("unavailable") ? "error" : "success"}`}>{message.startsWith("Cannot") || message.includes("unavailable") ? <AlertTriangle size={18}/> : <CheckCircle2 size={18}/>} {message}</div>}

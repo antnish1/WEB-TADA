@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./auth.css";
+import "./admin.css";
 
 export const metadata: Metadata = {
   title: "FCV TADA | Today's Deputation",

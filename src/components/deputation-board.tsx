@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Cloud, LogOut, Plus, Save, Search, Send, Trash2, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Cloud, LogOut, Plus, Save, Search, Send, Trash2, UserCog, Users } from "lucide-react";
 import { engineersByBranch, type Branch } from "@/lib/engineers";
 import type { CallEntry, DailyStatus, EngineerPlan } from "@/lib/types";
 import { createCall, hasOverlap, statusLabels, validatePlan, workStatuses } from "@/lib/utils";
@@ -17,9 +17,10 @@ type DeputationBoardProps = {
   branchLocked?: boolean;
   userLabel?: string;
   onLogout?: () => void | Promise<void>;
+  onManageUsers?: () => void;
 };
 
-export function DeputationBoard({ initialBranch = "JABALPUR BHL", branchLocked = false, userLabel = "Branch Manager", onLogout }: DeputationBoardProps) {
+export function DeputationBoard({ initialBranch = "JABALPUR BHL", branchLocked = false, userLabel = "Branch Manager", onLogout, onManageUsers }: DeputationBoardProps) {
   const safeInitialBranch = branches.includes(initialBranch) ? initialBranch : "JABALPUR BHL";
   const [branch, setBranch] = useState<Branch>(safeInitialBranch);
   const [date, setDate] = useState(today);
@@ -107,7 +108,7 @@ export function DeputationBoard({ initialBranch = "JABALPUR BHL", branchLocked =
   return <main className="app-shell">
     <aside className="sidebar">
       <div className="brand"><div className="brand-mark">FCV</div><div><strong>TADA</strong><span>Service Operations</span></div></div>
-      <nav><button><ClipboardCheck size={18}/> Dashboard</button><button className="active"><Users size={18}/> Today&apos;s Deputation</button><button><ClipboardCheck size={18}/> All Deputations</button></nav>
+      <nav><button><ClipboardCheck size={18}/> Dashboard</button><button className="active"><Users size={18}/> Today&apos;s Deputation</button><button><ClipboardCheck size={18}/> All Deputations</button>{onManageUsers && <button onClick={onManageUsers}><UserCog size={18}/> User Management</button>}</nav>
       <div className="sidebar-note"><Cloud size={16}/> {isSupabaseConfigured ? `Data source: ${source}` : "Supabase not configured"}<br/><strong>{userLabel}</strong><br/>{branch}{onLogout && <button className="logout-link" onClick={() => void onLogout()}><LogOut size={15}/> Sign out</button>}</div>
     </aside>
     <section className="content">
